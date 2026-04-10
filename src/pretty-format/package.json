@@ -19,7 +19,7 @@
 		"@rbxts-js/jest-get-type": "workspace:^",
 		"@rbxts-js/luau-polyfill": "1.2.3-ts.1",
 		"@rbxts-js/luau-regexp": "0.2.2-ts.1",
-		"@rbxts-js/react-is": "17.1.20-ts.1",
+		"@rbxts-js/react-is": "17.3.7-ts.1",
 		"@rbxts-js/roblox-shared": "workspace:^"
 	}
 }
