@@ -32,6 +32,63 @@ do
 
 	local RegExp = require(Packages.RegExp)
 
+	-- ROBLOX deviation START: luau-regexp backtracks through every alternative, so a
+	-- group of escaped literals is matched by plain substring search instead
+	local ESCAPABLE = {}
+	for _, character in string.split("$()*+.?[]^{|}\\", "") do
+		ESCAPABLE[character] = true
+	end
+
+	local function literalAlternation(pattern: string): { string }?
+		if string.sub(pattern, 1, 1) ~= "(" or string.sub(pattern, -1) ~= ")" then
+			return nil
+		end
+		local literals = {}
+		local current = {}
+		local index = 2
+		local last = #pattern - 1
+		while index <= last do
+			local character = string.sub(pattern, index, index)
+			if character == "\\" then
+				local escaped = string.sub(pattern, index + 1, index + 1)
+				if index + 1 > last or not ESCAPABLE[escaped] then
+					return nil
+				end
+				table.insert(current, escaped)
+				index += 2
+			elseif character == "|" then
+				table.insert(literals, table.concat(current))
+				current = {}
+				index += 1
+			elseif ESCAPABLE[character] then
+				return nil
+			else
+				table.insert(current, character)
+				index += 1
+			end
+		end
+		table.insert(literals, table.concat(current))
+		return literals
+	end
+
+	local function buildTestNamePattern(pattern: string): any
+		local literals = literalAlternation(pattern)
+		if literals == nil then
+			return RegExp(pattern, "i")
+		end
+		return {
+			test = function(_self: any, value: string): boolean
+				for _, literal in literals do
+					if string.find(value, literal, 1, true) ~= nil then
+						return true
+					end
+				end
+				return false
+			end,
+		}
+	end
+	-- ROBLOX deviation END
+
 	type Circus_EventHandler = typesModule.Circus_EventHandler
 	type Circus_Event = typesModule.Circus_Event
 	type Circus_State = typesModule.Circus_State
@@ -278,7 +335,7 @@ do
 				-- state.originalGlobalErrorHandlers = injectGlobalErrorHandlers(state.parentProcess)
 				-- ROBLOX deviation END
 				if Boolean.toJSBoolean(event.testNamePattern) then
-					state.testNamePattern = RegExp(event.testNamePattern, "i")
+					state.testNamePattern = buildTestNamePattern(event.testNamePattern)
 				end
 				break
 			elseif event.name == "teardown" then

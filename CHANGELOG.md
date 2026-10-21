@@ -2,6 +2,7 @@
 
 ## Unreleased
 * :sparkles: String requires inside tests resolve through `ScriptService:ResolveModulePath` when the engine supports it, so every path native `require` understands (including `.config` aliases) also works under Jest. Engines without the method keep the existing resolver.
+* :zap: A `testNamePattern` that is one group of escaped literals, such as `(first name|second \(name\))`, now selects tests by plain substring search instead of a regular expression. Selecting with hundreds of names is much faster, and selects the same tests as before.
 
 ## 3.20.1 (2026-08-30)
 * :broom: Bumps the version of luau-regexp used by Jest from 0.2.2 -> 0.3.0
